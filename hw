@@ -1,0 +1,161 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdbool.h>
+
+#define MAX_N 10
+
+int visited[MAX_N][MAX_N] = {}; 
+
+int maze[MAX_N][MAX_N] ={
+        { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
+        { 1, 0, 0, 1, 1, 0, 1, 1, 0, 1 },
+        { 1, 0, 1, 1, 0, 0, 0, 0, 0, 1 },
+        { 1, 0, 0, 0, 0, 1, 0, 1, 0, 1 },
+        { 1, 1, 1, 0, 1, 1, 0, 1, 0, 1 },
+        { 1, 0, 1, 1, 1, 0, 0, 1, 0, 1 },
+        { 1, 0, 0, 0, 0, 0, 1, 1, 0, 1 },
+        { 1, 1, 1, 1, 1, 1, 1, 0, 0, 1 },
+        { 1, 0, 0, 0, 1, 0, 0, 0, 0, 1 },
+        { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }
+    };
+
+typedef struct Coordinate {
+    int x;
+    int y;
+} Coordinate ;
+
+typedef struct Node {
+    Coordinate *data;
+    struct Node *next;
+} Node ;
+
+typedef struct Stack {
+    int top; 
+    struct Node *head;
+} Stack ; 
+
+
+int isEmpty(Stack *s) {
+    return s -> top == -1;
+}
+
+
+void push(Stack *s, Coordinate *c) {
+    Node *newNode = malloc(sizeof(Node));
+    newNode -> data = c;
+    
+    if (isEmpty(s)) {
+        s -> head = newNode;
+    }
+
+    Node *temp = s -> head;
+    for (int i = 0; i < s -> top; i++) {
+        temp = temp -> next;
+    }
+
+    temp -> next = newNode;
+    s -> top = s -> top + 1;
+}
+
+
+Coordinate *pop(Stack *s) {
+    if (isEmpty(s)) {
+        return NULL;
+    }
+
+    Node *temp = s -> head;
+    Coordinate *r;
+
+    for (int i = 0; i < s -> top; i++) {
+        temp = temp -> next;
+    }
+
+    r = temp -> data;
+    s -> top = s -> top - 1;
+    free(temp); 
+    return r;
+}
+
+Coordinate *setCoordinate(int x, int y) {
+    Coordinate *temp = malloc(sizeof(Coordinate));
+    temp -> x = x;
+    temp -> y = y;
+    return temp;
+}
+
+int isWall(int x, int y) { 
+    if (x < 0 || x >= MAX_N-1 || y < 0 || y >= MAX_N-1) {
+        return 1;
+    }
+    return maze[x][y];
+}
+
+int isVisited(int x, int y) {
+    return visited[x][y];
+}
+
+void findPath(Stack *s, Coordinate *c) { 
+    int x = c -> x;
+    int y = c -> y;
+    visited[x][y] = 1;
+
+    if (!isVisited(x+1, y) && !isWall(x+1, y)) {
+        push(s, setCoordinate(x + 1, y));
+    }
+    if (!isVisited(x-1, y) && !isWall(x-1, y)) {
+        push(s, setCoordinate(x - 1, y));
+    }
+    if (!isVisited(x, y+1) && !isWall(x, y+1)) {
+        push(s, setCoordinate(x, y + 1));
+    }
+    if (!isVisited(x, y-1) && !isWall(x, y-1)) {
+        push(s, setCoordinate(x, y - 1));
+    }
+}
+
+int arrived(Coordinate *c, Coordinate *f) {
+    if (c -> x == f -> x && c -> y == f -> y) {
+        return 1;
+    }
+    return 0;
+}
+
+Stack *initializeStack() {
+    Stack *s = malloc(sizeof(Stack));
+    s->top = -1;
+    s->head = NULL;
+    return s;
+}
+
+int main () {
+
+    memset(visited, 0, sizeof(visited));
+
+    Coordinate *start = malloc(sizeof(Coordinate));
+    Coordinate *finish = malloc(sizeof(Coordinate));
+    Stack *s = initializeStack();
+
+    int x, y;
+    scanf("%d %d", &x, &y); 
+    start = setCoordinate(x, y);
+    scanf("%d %d", &x, &y); 
+    finish = setCoordinate(x, y); 
+
+    push(s, start);
+
+    while(!isEmpty(s)) {
+        Coordinate *temp = pop(s);
+
+        //printf("x : %d, y : %d\n",temp -> x, temp -> y);
+
+        if(arrived(temp, finish)) {
+            printf("can find a path to finish");
+            return 0;
+        }
+        findPath(s, temp);
+    }
+
+    printf("can't find a path to finish");
+    return 0;
+}
